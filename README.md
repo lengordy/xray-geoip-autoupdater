@@ -1,3 +1,7 @@
+![License](https://img.shields.io/badge/license-MIT-blue)
+![Version](https://img.shields.io/badge/version-1.0.0-informational)
+![Status](https://img.shields.io/badge/status-stable-green)
+
 # xray-geoip-autoupdater
 
 Lightweight systemd + Docker auto-updater for Xray GeoIP / GeoSite databases with Telegram notifications.
