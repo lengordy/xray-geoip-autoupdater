@@ -10,7 +10,7 @@ Lightweight systemd + Docker auto-updater for Xray GeoIP / GeoSite databases wit
 
 ## What it does
 
-- Checks latest release from `v2ray-rules-dat`
+- Checks latest release from `Loyalsoldier/v2ray-rules-dat`
 - Compares with local state
 - Downloads `geosite.dat` and `geoip.dat` if new version detected
 - Copies files into Docker container
