@@ -8,7 +8,13 @@ CONTAINER="${CONTAINER_NAME}"
 WORKDIR="${INSTALL_PATH}"
 
 STATE_FILE="/var/lib/geoip-update.state"
-MAINT_FLAG="${MAINT_FLAG:-/run/geoip-maintenance.flag}"   # ← добавлено
+MAINT_FLAG="${MAINT_FLAG:-/run/geoip-maintenance.flag}"
+
+# ================ API VALIDATION (optional) ================
+API_CHECK_ENABLED="${API_CHECK_ENABLED:-0}"
+API_HOST="${API_HOST:-127.0.0.1}"
+API_PORT="${API_PORT:-2222}"
+# =================================================
 
 TMPDIR="$(mktemp -d)"
 
@@ -63,24 +69,29 @@ wget -q -O geoip.dat "$GEOIP_URL" || fail
 docker cp geosite.dat "$CONTAINER":"$WORKDIR"/ || fail
 docker cp geoip.dat "$CONTAINER":"$WORKDIR"/ || fail
 
-# ── Новый блок перезапуска с maintenance-флагом и проверкой API ──
+# ── Restart with maintenance flag ──
 touch "$MAINT_FLAG" || fail
 
 docker restart "$CONTAINER" >/dev/null || fail
 
-API_OK=0
-for i in {1..60}; do
-  if docker exec "$CONTAINER" sh -lc "nc -z 127.0.0.1 2222" >/dev/null 2>&1; then
-    API_OK=1
-    break
-  fi
-  sleep 1
-done
+# Optional API validation
+if [[ "$API_CHECK_ENABLED" -eq 1 ]]; then
 
-if [[ $API_OK -ne 1 ]]; then
-  send_tg "❌ *GeoIP update applied but API did not recover*
+  API_OK=0
+  for i in {1..60}; do
+    if docker exec "$CONTAINER" sh -lc "nc -z $API_HOST $API_PORT" >/dev/null 2>&1; then
+      API_OK=1
+      break
+    fi
+    sleep 1
+  done
+
+  if [[ $API_OK -ne 1 ]]; then
+    send_tg "❌ *GeoIP update applied but API did not recover*  
 Maintenance flag left in place."
-  exit 1
+    exit 1
+  fi
+
 fi
 
 rm -f "$MAINT_FLAG"
