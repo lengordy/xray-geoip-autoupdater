@@ -1,11 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+VERSION="1.1.0"
+
 # ================= CONFIGURATION =================
 CONTAINER="${CONTAINER_NAME}"
 WORKDIR="${INSTALL_PATH}"
 
 STATE_FILE="/var/lib/geoip-update.state"
+MAINT_FLAG="${MAINT_FLAG:-/run/geoip-maintenance.flag}"   # ← добавлено
+
 TMPDIR="$(mktemp -d)"
 
 GEOSITE_URL="https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat"
@@ -59,8 +63,27 @@ wget -q -O geoip.dat "$GEOIP_URL" || fail
 docker cp geosite.dat "$CONTAINER":"$WORKDIR"/ || fail
 docker cp geoip.dat "$CONTAINER":"$WORKDIR"/ || fail
 
+# ── Новый блок перезапуска с maintenance-флагом и проверкой API ──
+touch "$MAINT_FLAG" || fail
+
 docker restart "$CONTAINER" >/dev/null || fail
 
+API_OK=0
+for i in {1..60}; do
+  if docker exec "$CONTAINER" sh -lc "nc -z 127.0.0.1 2222" >/dev/null 2>&1; then
+    API_OK=1
+    break
+  fi
+  sleep 1
+done
+
+if [[ $API_OK -ne 1 ]]; then
+  send_tg "❌ *GeoIP update applied but API did not recover*
+Maintenance flag left in place."
+  exit 1
+fi
+
+rm -f "$MAINT_FLAG"
 echo "$LATEST_TAG" > "$STATE_FILE"
 
 send_tg "✅ *GeoIP / GeoSite updated successfully*
