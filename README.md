@@ -1,5 +1,5 @@
 ![License](https://img.shields.io/badge/license-MIT-blue)
-![Version](https://img.shields.io/badge/version-1.0.0-informational)
+![Version](https://img.shields.io/badge/version-1.1.0-informational)
 ![Status](https://img.shields.io/badge/status-stable-green)
 
 # xray-geoip-autoupdater
@@ -133,6 +133,22 @@ Example:
 -   Not related to WARP directly
 -   Safe to run daily (updates only on new release)
 -   Designed for single-node production deployments
+
+------------------------------------------------------------------------
+
+## Maintenance Mode Integration
+
+This version supports maintenance-aware updates.
+
+If a maintenance flag file is configured:
+
+- The updater sets the flag before container restart
+- Waits until Node API becomes reachable
+- Updates state only after successful API validation
+- Leaves maintenance flag intact if API does not recover
+
+This prevents false-positive monitoring alerts and ensures
+deterministic post-restart validation in production environments.
 
 ------------------------------------------------------------------------
 
